@@ -83,14 +83,6 @@ class H2toMySQL:
 
         return type
 
-    # Converts values from querying H2 into something MySQL understands
-    # By default behaves like identity function
-    def convert_values(self, value):
-        if type(value) == 'jpype._jclass.java.lang.Long':
-            return 'BLABLABLA'
-
-        return value
-
     # Get tables and respective schema from H2
     def get_h2_tables(self):
         query_h2_tables = "SHOW TABLES FROM PUBLIC;"
@@ -157,7 +149,7 @@ class H2toMySQL:
             if curs is not None:
                 curs.close()
 
-    # Escaping for MySQL as see here
+    # Escaping for MySQL as seen here
     # https://dev.mysql.com/doc/refman/5.7/en/string-literals.html
     def escape_strings(self, string):
         escaped = string.translate(str.maketrans({"'": "\\'",
