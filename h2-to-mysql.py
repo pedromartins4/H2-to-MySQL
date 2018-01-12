@@ -202,9 +202,8 @@ class H2toMySQL:
             curs_h2.close()
             curs_mysql.close()
 
+    # Main function
     def export(self):
-        converter.reset_mysql()
-
         print('Creating target MySQL DB...')
         converter.create_new_db()
 
