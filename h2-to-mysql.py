@@ -163,8 +163,8 @@ class H2toMySQL:
     # Reading the writing is done in batches with the same size
     def export_h2_table(self, table):
 
-        query_h2_select = "SELECT * FROM %s;"
         query_h2_count = "SELECT COUNT(*) FROM %s;"
+        query_h2_select = "SELECT * FROM %s OFFSET %s FETCH NEXT %s ROWS ONLY;"
 
         table_columns = ', '.join(self.h2_tables[table].keys())
         query_mysql_insert = "INSERT INTO " + table + " (" + table_columns + ") VALUES %s;"
@@ -177,29 +177,24 @@ class H2toMySQL:
             table_size, = curs_h2.fetchone()
             table_size = int(str(table_size))
 
-            curs_h2.execute(query_h2_select % table)
-
-            export_data = list()
-            for results in curs_h2.fetchall():
-                results = list(results)
-                res = '(' + ', '.join(map(lambda x: "'" + self.escape_strings(str(x)) + "'", results)) + ')'
-                export_data.append(res)
-
             batch = 0
             while batch < table_size:
-                init = batch
+
+                batch_export_data = list()
+                curs_h2.execute(query_h2_select % (table, batch, BATCH_SIZE))
+                for results in curs_h2.fetchall():
+                    results = list(results)
+                    res = '(' + ', '.join(map(lambda x: "'" + self.escape_strings(str(x)) + "'", results)) + ')'
+                    batch_export_data.append(res)
 
                 if batch + BATCH_SIZE >= table_size:
                     batch = table_size
                 else:
                     batch += BATCH_SIZE
 
-                batch_export_data = export_data[init:batch]
-
-                if len(batch_export_data) > 0:
-                    query = query_mysql_insert % ', '.join(batch_export_data)
-                    curs_mysql.execute(query)
-                    self.mysql_connection.commit()
+                query = query_mysql_insert % ', '.join(batch_export_data)
+                curs_mysql.execute(query)
+                self.mysql_connection.commit()
 
                 print("  %s out of %s rows inserted into %s" % (batch, table_size, table))
 
@@ -233,15 +228,15 @@ if __name__ == "__main__":
     # Careful when providing the path to a H2 database.
     # You should provide the full path WITHOUT the extension.
     # https://stackoverflow.com/questions/23403875/how-to-see-all-tables-in-my-h2-database-at-localhost8082/34551665
-    H2_DB_PATH = 'path-to-db'
+    H2_DB_PATH = 'path-to-h2-database'
 
     MYSQL_DB_NAME = 'H2Export'
     MYSQL_DB_HOST = 'localhost'
     MYSQL_DB_USER = 'root'
     MYSQL_DB_PASS = 'pass'
 
-    # Number of entries being written at a time
-    BATCH_SIZE = 20
+    # Number of entries being read and written at a time
+    BATCH_SIZE = 1000
 
     converter = H2toMySQL()
     # converter.reset_mysql() Unnecessary, for debugging only
@@ -253,3 +248,5 @@ if __name__ == "__main__":
     # print( converter.escape_strings("\\") )
     # print( converter.escape_strings('%')  )
     # print( converter.escape_strings('_')  )
+
+
