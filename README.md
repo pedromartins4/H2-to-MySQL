@@ -1,6 +1,6 @@
 # H2-to-MySQL
 
-This script does exactly that: **automatically** reads all the information in a H2 database and exports it into a MySQL database. If you're as lucky as me this is the best you'll find.
+This script does exactly that: **automatically** reads all the information in a H2 database and exports it into a MySQL database. This is particularly useful for Django which [does not support H2](https://stackoverflow.com/questions/46671380/django-admin-interface-for-h2-database). If you're as lucky as me this is the best you'll find.
 
 To run, look at `__main__` and change the global variables that set paths and server configurations.
 
