@@ -222,7 +222,7 @@ class H2toMySQL:
 
         for table in converter.h2_tables:
             print('Exporting table %s...' % table)
-            converter.export_h2_table('FUNCTIONALITIES')
+            converter.export_h2_table(table)
 
         print("H2 DB '%s' successfully exported to MySQL DB '%s'." % (H2_DB_PATH, MYSQL_DB_NAME))
 
