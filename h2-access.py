@@ -162,13 +162,12 @@ class H2toMySQL:
     # Exports a table to MySQL
     # Reading the writing is done in batches with the same size
     def export_h2_table(self, table):
-        batch = 0
 
-        query_h2_select = "SELECT * FROM %s LIMIT %s,%s;"
+        query_h2_select = "SELECT * FROM %s;"
         query_h2_count = "SELECT COUNT(*) FROM %s;"
 
         table_columns = ', '.join(self.h2_tables[table].keys())
-        query_mysql_insert = "INSERT INTO " + table + " (" + table_columns + ") VALUE %s;"
+        query_mysql_insert = "INSERT INTO " + table + " (" + table_columns + ") VALUES %s;"
 
         try:
             curs_h2 = self.h2_connection.cursor()
@@ -178,6 +177,15 @@ class H2toMySQL:
             table_size, = curs_h2.fetchone()
             table_size = int(str(table_size))
 
+            curs_h2.execute(query_h2_select % table)
+
+            export_data = list()
+            for results in curs_h2.fetchall():
+                results = list(results)
+                res = '(' + ', '.join(map(lambda x: "'" + self.escape_strings(str(x)) + "'", results)) + ')'
+                export_data.append(res)
+
+            batch = 0
             while batch < table_size:
                 init = batch
 
@@ -186,16 +194,12 @@ class H2toMySQL:
                 else:
                     batch += BATCH_SIZE
 
-                export_data = list()
+                batch_export_data = export_data[init:batch]
 
-                curs_h2.execute(query_h2_select % (table, init, batch))
-                for results in curs_h2.fetchall():
-                    res = '(' + ', '.join(map(lambda x: "'" + self.escape_strings(str(x)) + "'", results)) + ')'
-                    export_data.append(res)
-
-                query = query_mysql_insert % ','.join(export_data)
-                curs_mysql.execute(query)
-                self.mysql_connection.commit()
+                if len(batch_export_data) > 0:
+                    query = query_mysql_insert % ', '.join(batch_export_data)
+                    curs_mysql.execute(query)
+                    self.mysql_connection.commit()
 
                 print("  %s out of %s rows inserted into %s" % (batch, table_size, table))
 
@@ -218,7 +222,7 @@ class H2toMySQL:
 
         for table in converter.h2_tables:
             print('Exporting table %s...' % table)
-            converter.export_h2_table(table)
+            converter.export_h2_table('FUNCTIONALITIES')
 
         print("H2 DB '%s' successfully exported to MySQL DB '%s'." % (H2_DB_PATH, MYSQL_DB_NAME))
 
@@ -229,17 +233,18 @@ if __name__ == "__main__":
     # Careful when providing the path to a H2 database.
     # You should provide the full path WITHOUT the extension.
     # https://stackoverflow.com/questions/23403875/how-to-see-all-tables-in-my-h2-database-at-localhost8082/34551665
-    H2_DB_PATH = 'path-to-H2'
+    H2_DB_PATH = 'path-to-db'
 
     MYSQL_DB_NAME = 'H2Export'
     MYSQL_DB_HOST = 'localhost'
     MYSQL_DB_USER = 'root'
-    MYSQL_DB_PASS = ''
+    MYSQL_DB_PASS = 'pass'
 
-    # Number of entries being read and written at a time
-    BATCH_SIZE = 1000
+    # Number of entries being written at a time
+    BATCH_SIZE = 20
 
     converter = H2toMySQL()
+    # converter.reset_mysql() Unnecessary, for debugging only
     converter.export()
 
     # To test string escaping

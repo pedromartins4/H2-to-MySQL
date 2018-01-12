@@ -17,7 +17,7 @@ The only thing you *might* need to edit is the function `convert_types`, which c
 * `DOUBLE(N)` -> `FLOAT(N,N)`
 * `REAL` -> `FLOAT(10,10)`
 
-If you have any problems, please submit an issue. If you update it, please consider submitting a pull request.
+If you have any problems, please submit an issue. If you improve the code, please consider submitting a pull request.
 
 Happy coding!
 
