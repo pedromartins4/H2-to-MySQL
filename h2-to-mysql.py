@@ -194,13 +194,18 @@ class H2toMySQL:
 
                 query = query_mysql_insert % ', '.join(batch_export_data)
                 curs_mysql.execute(query)
-                self.mysql_connection.commit()
+                self.commit()
 
                 print("  %s out of %s rows inserted into %s" % (batch, table_size, table))
 
         finally:
             curs_h2.close()
             curs_mysql.close()
+
+    # Commit function that reconnects as needed
+    def commit(self):
+        self.mysql_connection.ping(reconnect=True)
+        self.mysql_connection.commit()
 
     # Main function
     def export(self):
