@@ -107,14 +107,17 @@ class H2toMySQL:
 
                 res = curs.fetchall()
 
+                column_count = 0
                 table_columns = dict()
                 # Each r = (FIELD, TYPE, NULL, KEY, DEFAULT)
                 for (field_name, type, is_null, is_key, default_value) in res:
-                    table_columns[field_name] = {
-                        'type': self.convert_types(type), 'is_null': is_null, 'is_key': is_key,
+                    table_columns[str(column_count)] = {
+                        'field_name': field_name, 'type': self.convert_types(type),
+                        'is_null': is_null, 'is_key': is_key,
                         'default_value': default_value}
 
                     self.h2_tables[table] = table_columns
+                    column_count += 1
 
         finally:
             if curs is not None:
@@ -127,7 +130,7 @@ class H2toMySQL:
         try:
             mysql_columns = list()
             for column in self.h2_tables[table]:
-                temp = "%s %s" % (column, self.h2_tables[table][column]['type'])
+                temp = "%s %s" % (self.h2_tables[table][column]['field_name'], self.h2_tables[table][column]['type'])
 
                 if self.h2_tables[table][column]['is_null'] == 'YES':
                     temp += ' NULL'
@@ -166,7 +169,18 @@ class H2toMySQL:
         query_h2_count = "SELECT COUNT(*) FROM %s;"
         query_h2_select = "SELECT * FROM %s OFFSET %s FETCH NEXT %s ROWS ONLY;"
 
-        table_columns = ', '.join(self.h2_tables[table].keys())
+        column_count = 0
+        column_name = ''
+        column_names = list()
+        while column_name is not None:
+            if str(column_count) in self.h2_tables[table].keys():
+                column_name = self.h2_tables[table][str(column_count)]['field_name']
+                column_names.append(column_name)
+                column_count += 1
+            else:
+                column_name = None
+
+        table_columns = ', '.join(column_names)
         query_mysql_insert = "INSERT INTO " + table + " (" + table_columns + ") VALUES %s;"
 
         try:
@@ -232,7 +246,7 @@ if __name__ == "__main__":
     # Careful when providing the path to a H2 database.
     # You should provide the full path WITHOUT the extension.
     # https://stackoverflow.com/questions/23403875/how-to-see-all-tables-in-my-h2-database-at-localhost8082/34551665
-    H2_DB_PATH = 'path-to-h2-database'
+    H2_DB_PATH = 'path-to-H2'
 
     MYSQL_DB_NAME = 'H2Export'
     MYSQL_DB_HOST = 'localhost'
@@ -243,7 +257,7 @@ if __name__ == "__main__":
     BATCH_SIZE = 1000
 
     converter = H2toMySQL()
-    # converter.reset_mysql() Unnecessary, for debugging only
+    # converter.reset_mysql()  # Unnecessary, for debugging only
     converter.export()
 
     # To test string escaping
@@ -252,5 +266,3 @@ if __name__ == "__main__":
     # print( converter.escape_strings("\\") )
     # print( converter.escape_strings('%')  )
     # print( converter.escape_strings('_')  )
-
-
