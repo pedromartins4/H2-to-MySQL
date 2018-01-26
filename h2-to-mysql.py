@@ -77,10 +77,10 @@ class H2toMySQL:
 
         if 'DOUBLE' in type:
             value = type[7:-1]  # type = 'DOUBLE(value)'
-            return 'FLOAT(%s,%s)' % (value, value)
+            return 'FLOAT(%s,%s)' % (value, int(value)-1)
 
         if 'REAL' in type:
-            return 'FLOAT(10,10)'
+            return 'FLOAT(15,10)'
 
         return type
 
@@ -199,6 +199,7 @@ class H2toMySQL:
 
                 batch_export_data = list()
                 curs_h2.execute(query_h2_select % (table, batch, BATCH_SIZE))
+                # print(query_h2_select % (table, batch, BATCH_SIZE))
 
                 h2_query_time = (dt.datetime.now() - begin).microseconds
                 begin = dt.datetime.now()
@@ -218,6 +219,7 @@ class H2toMySQL:
                 begin = dt.datetime.now()
 
                 query = query_mysql_insert % ', '.join(batch_export_data)
+                # print("  "+query)
                 curs_mysql.execute(query)
                 self.commit()
 
@@ -251,7 +253,7 @@ class H2toMySQL:
 
         for table in converter.h2_tables:
             print('Exporting table %s...' % table)
-            converter.export_h2_table(table)
+            converter.export_h2_table("FALSE_POSITIVES")
 
         print("H2 DB '%s' successfully exported to MySQL DB '%s'." % (H2_DB_PATH, MYSQL_DB_NAME))
 
@@ -270,7 +272,7 @@ if __name__ == "__main__":
     MYSQL_DB_PASS = 'pass'
 
     # Number of entries being read and written at a time
-    BATCH_SIZE = 10000
+    BATCH_SIZE = 50000
 
     converter = H2toMySQL()
     converter.reset_mysql()  # Unnecessary, for debugging only
