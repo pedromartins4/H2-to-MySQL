@@ -1,5 +1,6 @@
 import pymysql
 import jaydebeapi
+import datetime as dt
 
 
 class H2toMySQL:
@@ -194,23 +195,38 @@ class H2toMySQL:
             batch = 0
             while batch < table_size:
 
+                begin = dt.datetime.now()
+
                 batch_export_data = list()
                 curs_h2.execute(query_h2_select % (table, batch, BATCH_SIZE))
+
+                h2_query_time = (dt.datetime.now() - begin).microseconds
+                begin = dt.datetime.now()
+
                 for results in curs_h2.fetchall():
                     results = list(results)
                     res = '(' + ', '.join(map(lambda x: "'" + self.escape_strings(str(x)) + "'", results)) + ')'
                     batch_export_data.append(res)
+
+                python_data_handling_time = (dt.datetime.now() - begin).microseconds
 
                 if batch + BATCH_SIZE >= table_size:
                     batch = table_size
                 else:
                     batch += BATCH_SIZE
 
+                begin = dt.datetime.now()
+
                 query = query_mysql_insert % ', '.join(batch_export_data)
                 curs_mysql.execute(query)
                 self.commit()
 
+                mysql_insertion_time = (dt.datetime.now() - begin).microseconds
+
+                print("  --------------------------------------------")
                 print("  %s out of %s rows inserted into %s" % (batch, table_size, table))
+                print("  Times (microseconds): |H2 reading:%s| |Data handling:%s| |MySQL writing:%s|" % (
+                h2_query_time, python_data_handling_time, mysql_insertion_time))
 
         finally:
             curs_h2.close()
@@ -250,14 +266,14 @@ if __name__ == "__main__":
 
     MYSQL_DB_NAME = 'H2Export'
     MYSQL_DB_HOST = 'localhost'
-    MYSQL_DB_USER = 'root'
+    MYSQL_DB_USER = 'user'
     MYSQL_DB_PASS = 'pass'
 
     # Number of entries being read and written at a time
-    BATCH_SIZE = 1000
+    BATCH_SIZE = 10000
 
     converter = H2toMySQL()
-    # converter.reset_mysql()  # Unnecessary, for debugging only
+    converter.reset_mysql()  # Unnecessary, for debugging only
     converter.export()
 
     # To test string escaping
