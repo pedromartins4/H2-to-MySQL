@@ -253,7 +253,7 @@ class H2toMySQL:
 
         for table in converter.h2_tables:
             print('Exporting table %s...' % table)
-            converter.export_h2_table("FALSE_POSITIVES")
+            converter.export_h2_table(table)
 
         print("H2 DB '%s' successfully exported to MySQL DB '%s'." % (H2_DB_PATH, MYSQL_DB_NAME))
 
@@ -269,10 +269,10 @@ if __name__ == "__main__":
     MYSQL_DB_NAME = 'H2Export'
     MYSQL_DB_HOST = 'localhost'
     MYSQL_DB_USER = 'user'
-    MYSQL_DB_PASS = 'pass'
+    MYSQL_DB_PASS = 'root'
 
     # Number of entries being read and written at a time
-    BATCH_SIZE = 50000
+    BATCH_SIZE = 1000
 
     converter = H2toMySQL()
     converter.reset_mysql()  # Unnecessary, for debugging only
