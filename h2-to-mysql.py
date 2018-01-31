@@ -164,7 +164,7 @@ class H2toMySQL:
         return escaped
 
     # Exports a table to MySQL
-    # Reading the writing is done in batches with the same size
+    # Reading and writing is done in batches with the same size
     def export_h2_table(self, table):
 
         query_h2_count = "SELECT COUNT(*) FROM %s;"
