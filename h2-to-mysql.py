@@ -82,6 +82,10 @@ class H2toMySQL:
         if 'REAL' in type:
             return 'FLOAT(15,10)'
 
+        # TIMESTAMP can only have 6 digits in MySQL
+        if 'TIMESTAMP' in type:
+            return 'TIMESTAMP(6)'
+
         return type
 
     # Get tables and respective schema from H2
