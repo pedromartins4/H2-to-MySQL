@@ -82,6 +82,10 @@ class H2toMySQL:
         if 'REAL' in type:
             return 'FLOAT(15,10)'
 
+        # TIMESTAMP can only have 6 digits in MySQL
+        if 'TIMESTAMP' in type:
+            return 'TIMESTAMP(6)'
+
         return type
 
     # Get tables and respective schema from H2
@@ -163,6 +167,15 @@ class H2toMySQL:
                                                   "_": "\\_"}))
         return escaped
 
+    # MySQL only understand boolean values if their are not encapsulated by ''
+    # eg. True is correct, while 'True' is seen as string and causes an error
+    def format_value(self, string):
+        if string == 'True' or string == 'False':
+            return self.escape_strings(string)
+        else:
+            return "'" + self.escape_strings(string) + "'"
+
+
     # Exports a table to MySQL
     # Reading and writing is done in batches with the same size
     def export_h2_table(self, table):
@@ -206,7 +219,8 @@ class H2toMySQL:
 
                 for results in curs_h2.fetchall():
                     results = list(results)
-                    res = '(' + ', '.join(map(lambda x: "'" + self.escape_strings(str(x)) + "'", results)) + ')'
+                    res = '(' + ', '.join(map(lambda x: self.format_value(str(x)), results)) + ')'
+
                     batch_export_data.append(res)
 
                 python_data_handling_time = (dt.datetime.now() - begin).microseconds
