@@ -10,6 +10,8 @@ It was tested in one DB with `Python3` and works flawlessly. It's not very sophi
 
 The script reads H2 using [`JayDeBeApi`](https://pypi.python.org/pypi/JayDeBeApi/) with the H2 driver (the `h2-1.4.196.jar` included here) and writes to MySQL with [`PyMySQL`](https://github.com/PyMySQL/PyMySQL). These are the only two dependencies.
 
+You can install the dependencies using pip: `pip install -r requirements.txt`.
+
 The only thing you *might* need to edit is the function `convert_types`, which converts H2 types into MySQL types. I did not implement this function exhaustively, only the types I needed, but it is fairly straightforward. Currently, it converts:
 
 * `VARCHAR(*)` -> `TEXT`
